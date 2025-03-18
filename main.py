@@ -1,5 +1,5 @@
 import secrets
-from flask import Flask, render_template, redirect, request, make_response, session, abort
+from flask import Flask, render_template, redirect, request, make_response, session, abort, jsonify
 from data import db_session
 from data.users import User
 from data.news import News
@@ -7,12 +7,14 @@ from forms.newsform import NewsForm
 from forms.loginform import LoginForm
 from forms.registerform import RegisterForm
 from flask_login import LoginManager, login_user, logout_user, current_user, login_required
+import news_api
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secrets.token_hex(16)
 db_session.global_init("db/blogs.db")
 login_manager = LoginManager()
 login_manager.init_app(app)
+app.register_blueprint(news_api.blueprint)
 
 
 @login_manager.user_loader
@@ -144,6 +146,16 @@ def news_delete(id):
 def logout():
     logout_user()
     return redirect("/")
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return make_response(jsonify({'error': 'Not found'}), 404)
+
+
+@app.errorhandler(400)
+def bad_request(_):
+    return make_response(jsonify({'error': 'Bad Request'}), 400)
 
 
 if __name__ == '__main__':
